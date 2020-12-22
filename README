@@ -1,0 +1,60 @@
+Goal:
+
+  List of urls for more-or-less latest release clojars jars
+
+Problem:
+
+  There does not already appear to be such a list in convenient form
+
+Requirements:
+
+  Babashka
+  Internet connection
+
+Usage:
+
+  bb gen-clru-list.bb
+
+  If successful, two new files should be created:
+
+    * feed.clj
+    * latest-release-jar-urls.txt
+
+  The .txt file should contain the desired list of urls.
+
+Background:
+
+  Observations:
+
+    There is a file "feed.clj" that has "data" about clojars content, it's
+    a sequence of maps that look like:
+
+     {:group-id "viz-cljc",
+      :artifact-id "viz-cljc",
+      :description "Clojure and Clojurescript support for Viz.js",
+      :scm {:tag "73b1e3ffcbad54088ac24681484ee0f97b382f1b", :url ""},
+      :homepage "http://example.com/FIXME",
+      :url "http://example.com/FIXME",
+      :versions ["0.1.3" "0.1.2" "0.1.0"]}
+
+    Note that the associated value for the :versions key is a vector of
+    version strings.
+
+    feed.clj.gz is avaliable from:
+
+      http://clojars.org/repo/feed.clj.gz
+
+  Idea:
+
+    Use each map from the feed to determine:
+
+      * a latest release version if there is one
+      * assuming there is, compute a url for the jar to fetch
+
+    The target url should end up looking like:
+
+      https://repo.clojars.org/viz-cljc/viz-cljc/0.1.3/viz-cljc-0.1.3.jar
+
+  References:
+
+    https://github.com/clojars/clojars-web/wiki/Data#useful-extracts-from-the-poms
