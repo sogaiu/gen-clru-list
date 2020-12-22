@@ -2,10 +2,37 @@
 
 (require
   '[babashka.curl :as bc]
+  '[babashka.deps :as bd]
   '[clojure.edn :as ce]
   '[clojure.java.io :as cji]
   '[clojure.java.shell :as cjs]
   '[clojure.string :as cs])
+
+(deps/add-deps
+ '{:deps {version-clj/version-clj
+          {:mvn/version "0.1.2"}}})
+
+(require
+ '[version-clj.core :as vc])
+
+(comment
+
+  (vc/version->seq "1.0.0")
+  ;; => [(1 0 0)]
+
+  (vc/version->seq "1.0.0-SNAPSHOT")
+  ;; => [(1 0 0) ["snapshot"]]
+
+  (vc/version->seq "0.4.0-beta1")
+  ;; => [(0 4 0) ("beta" 1)]
+
+  (vc/version->seq "0.2.0b3")
+  ;; => [(0 2 0) ("b" 3)]
+
+  (vc/version-compare "1.0.0-SNAPSHOT" "1.0.0")
+  ;; => -1
+
+  )
 
 (def clojars-repo-root
   "https://repo.clojars.org")
@@ -33,67 +60,41 @@
 
   )
 
-;; XXX: how about things like 1.2.0-3?
-;;      ignore for now
-(defn triple-num-version?
+(defn release-version?
   [ver-str]
-  (let [[_ left mid right] (re-find #"^(\d+)\.(\d+)\.(\d+)$" ver-str)]
-    (when (and left mid right)
-      (mapv (fn [item]
-              (Integer/parseInt item))
-        [left mid right]))))
+  (= (count (vc/version->seq ver-str))
+     1))
 
 (comment
 
-  (triple-num-version? "1.2.0")
-  ;; => [1 2 0]
+  (release-version? "0.1.0")
+  ;; => true
 
-  (triple-num-version? "7.0-20160503141241")
-  ;; => nil
-
-  )
-
-(defn compare-triple-num-versions
-  [[a1 a2 a3] [b1 b2 b3]]
-  (if (< a1 b1) -1
-    (if (> a1 b1) 1
-      (if (< a2 b2) -1
-        (if (> a2 b2) 1
-          (if (< a3 b3) -1
-            (if (> a3 b3) 1
-              0)))))))
-
-(comment
-
-  (compare-triple-num-versions [0 1 0] [0 2 0])
-  ;; => -1
-
-  (compare-triple-num-versions [0 8 0] [0 3 0])
-  ;; => -1
-
-  (compare-triple-num-versions [0 7 0] [0 7 0])
-  ;; => 0
+  (release-version? "0.1.0-SNAPSHOT")
+  ;; => false
 
   )
 
-;; XXX: 'normal' here means uses a version string of
-;;      of the form <number>.<number>.<number>
-(defn latest-normal-version
+(defn latest-release-version
   [versions]
-  (let [normal-versions (filter triple-num-version? versions)]
-    (->> normal-versions
-      (sort-by triple-num-version?
-        (fn [a b]
-          (compare-triple-num-versions b a)))
-      first)))
+  (->> (filter release-version? versions)
+    (sort vc/version-compare)
+    last))
 
 (comment
 
   (def versions
     ["1.7.0"])
   
-  (latest-normal-version versions)
+  (latest-release-version versions)
   ;; => "1.7.0"
+
+  (def versions
+    ["1.7.0"
+     "1.8.0"])
+
+  (latest-release-version versions)
+  ;; => "1.8.0"
   
   (def versions
     ["0.4.0"
@@ -108,7 +109,7 @@
      "0.2.0b2"
      "0.2.0b1"])
 
-  (latest-normal-version versions)
+  (latest-release-version versions)
   ;; => "0.4.0"
 
   (def versions
@@ -125,26 +126,24 @@
      "0.1.0-alpha13"
      "0.1.0-alpha1"])
 
-  ;; XXX: should this have been 0.1.18.2?
-  (latest-normal-version versions)
-  ;; => "0.1.18"
+  (latest-release-version versions)
+  ;; => "0.1.18.2"
 
-  ;; no latest-normal-version
+  ;; no latest-release-version
   (def versions
     ["0.1.9-SNAPSHOT"
      "0.1.9-beta3"
      "0.1.9-beta2"
      "0.1.9-beta1"])
 
-  (latest-normal-version versions)
+  (latest-release-version versions)
   ;; => nil
 
   )
-
 ;; XXX: platform-dependent?
 (defn feed-map->ext-line
   [{:keys [:artifact-id :group-id :versions]} ext]
-  (when-let [ver (latest-normal-version versions)]
+  (when-let [ver (latest-release-version versions)]
     (let [group-path (cs/replace group-id "." "/")]
       (str "./"
         group-path "/"
@@ -254,11 +253,18 @@
 
 ;; main
 
-(println "Fetching feed.clj.gz from clojars...")
-(fetch-to-file feed-url "feed.clj.gz")
+(when (not (.exists (cji/file "feed.clj")))
+  (println "Fetching feed.clj.gz from clojars...")
+  (fetch-to-file feed-url "feed.clj.gz"))
 
-(when (= (:exit (cjs/sh "gunzip" "feed.clj.gz"))
-         0)
+(when (.exists (cji/file "feed.clj.gz"))
+  (println "Uncompressing feed.clj.gz...")
+  (when-not (= (:exit (cjs/sh "gunzip" "feed.clj.gz"))
+               0)
+    (println "Failed, aborting")
+    (System/exit 1)))
+
+(when (.exists (cji/file "feed.clj"))
   (println "Writing latest release jars url list...")
   (with-open [out-file (cji/writer "latest-release-jar-urls.txt")]  
     (write-latest-jar-urls
