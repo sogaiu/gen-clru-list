@@ -7,13 +7,6 @@
   '[clojure.java.shell :as cjs]
   '[clojure.string :as cs])
 
-;; big list of poms:
-;;   http://clojars.org/repo/all-poms.txt
-;; learned via:
-;;   https://github.com/clojars/clojars-web/wiki/Data
-;; each line looks like:
-;    ./borkdude/babashka/0.0.75/babashka-0.0.75.pom
-
 (def clojars-repo-root
   "https://repo.clojars.org")
 
