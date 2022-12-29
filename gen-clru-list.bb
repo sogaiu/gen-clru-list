@@ -140,6 +140,7 @@
   ;; => nil
 
   )
+
 ;; XXX: platform-dependent?
 (defn feed-map->ext-line
   [{:keys [:artifact-id :group-id :versions]} ext]
