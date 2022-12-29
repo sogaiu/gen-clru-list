@@ -85,7 +85,7 @@
 
   (def versions
     ["1.7.0"])
-  
+
   (latest-release-version versions)
   ;; => "1.7.0"
 
@@ -95,7 +95,7 @@
 
   (latest-release-version versions)
   ;; => "1.8.0"
-  
+
   (def versions
     ["0.4.0"
      "0.4.0-beta1"
@@ -228,7 +228,7 @@
   ;; => "https://repo.clojars.org/viz-cljc/viz-cljc/0.1.3/viz-cljc-0.1.3.jar"
 
   )
-  
+
 (defn write-latest-jar-urls
   [feed out-file]
   (doseq [feed-map feed]
@@ -243,7 +243,7 @@
   (:exit (cjs/sh "gunzip" "feed.clj.gz"))
   ;; => 0
 
-  (with-open [out-file (cji/writer "latest-release-jar-urls.txt")]  
+  (with-open [out-file (cji/writer "latest-release-jar-urls.txt")]
     (write-latest-jar-urls
       (ce/read-string
         (str "[" (slurp (cji/file "feed.clj")) "]"))
@@ -266,7 +266,7 @@
 
 (when (.exists (cji/file "feed.clj"))
   (println "Writing latest release jars url list...")
-  (with-open [out-file (cji/writer "latest-release-jar-urls.txt")]  
+  (with-open [out-file (cji/writer "latest-release-jar-urls.txt")]
     (write-latest-jar-urls
      (ce/read-string
       (str "[" (slurp (cji/file "feed.clj")) "]"))
