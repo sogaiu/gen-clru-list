@@ -259,7 +259,8 @@
 
 (when (.exists (cji/file "feed.clj.gz"))
   (println "Uncompressing feed.clj.gz...")
-  (when-not (= (:exit (cjs/sh "gunzip" "feed.clj.gz"))
+  ;; using gzip instead of gunzip works better in more environments
+  (when-not (= (:exit (cjs/sh "gzip" "--decompress" "feed.clj.gz"))
                0)
     (println "Failed, aborting")
     (System/exit 1)))
