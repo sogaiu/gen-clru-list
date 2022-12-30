@@ -9,6 +9,7 @@ Problem:
 Requirements:
 
   Babashka
+  gzip executable
   Internet connection
 
 Usage:
@@ -26,8 +27,8 @@ Background:
 
   Observations:
 
-    There is a file "feed.clj" that has "data" about clojars content, it's
-    a sequence of maps that look like:
+    There is a file "feed.clj" that has "data" about clojars content,
+    it's a sequence of maps that look like:
 
      {:group-id "viz-cljc",
       :artifact-id "viz-cljc",
@@ -37,8 +38,8 @@ Background:
       :url "http://example.com/FIXME",
       :versions ["0.1.3" "0.1.2" "0.1.0"]}
 
-    Note that the associated value for the :versions key is a vector of
-    version strings.
+    Note that the associated value for the :versions key is a vector
+    of version strings.
 
     feed.clj.gz is avaliable from:
 
@@ -54,6 +55,19 @@ Background:
     The target url should end up looking like:
 
       https://repo.clojars.org/viz-cljc/viz-cljc/0.1.3/viz-cljc-0.1.3.jar
+
+    It seems possible that the order of version strings in the vector
+    corresponds to recency, i.e. if there are two version strings A
+    and B, if A is to the left of B in the vector, then it is more
+    recent.  However, it's not clear whether this can be relied upon.
+
+    Also, some version strings include words like "alpha", "beta",
+    "SNAPSHOT", "rc", etc.  For the present purposes, xsc's
+    version-clj will be used to determine what counts as a "release"
+    version.  This is done by examining the result of `version->seq`.
+    If the result only has one element, it appears there is no
+    "wordish" component to the version string and this will be taken
+    to mean "release" version.
 
   References:
 
